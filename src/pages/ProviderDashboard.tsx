@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { StatsCard } from "@/components/common/StatsCard";
+import MenuManagement from "./provider/MenuManagement";
+import QRScanner from "./provider/QRScanner";
 import {
   LayoutDashboard,
   Utensils,
@@ -16,6 +18,8 @@ import {
   Clock,
   CheckCircle,
 } from "lucide-react";
+
+type TabType = "dashboard" | "menu" | "subscribers" | "scanner" | "earnings";
 
 const stats = [
   { icon: <Users className="w-5 h-5" />, value: 156, label: "Active Subscribers", trend: { value: 12, isPositive: true } },
@@ -30,8 +34,27 @@ const recentScans = [
   { name: "Amit Kumar", time: "1 hour ago", status: "valid" },
 ];
 
+const navItems = [
+  { id: "dashboard" as TabType, icon: LayoutDashboard, label: "Dashboard" },
+  { id: "menu" as TabType, icon: Utensils, label: "Menu Management" },
+  { id: "subscribers" as TabType, icon: Users, label: "Subscribers" },
+  { id: "scanner" as TabType, icon: QrCode, label: "Scan QR" },
+  { id: "earnings" as TabType, icon: Wallet, label: "Earnings" },
+];
+
 export default function ProviderDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<TabType>("dashboard");
+
+  const handleNavClick = (tabId: TabType) => {
+    setActiveTab(tabId);
+    setSidebarOpen(false);
+  };
+
+  const getPageTitle = () => {
+    const item = navItems.find((i) => i.id === activeTab);
+    return item?.label || "Dashboard";
+  };
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -49,14 +72,16 @@ export default function ProviderDashboard() {
           </button>
         </div>
         <nav className="p-4 space-y-1">
-          {[
-            { icon: LayoutDashboard, label: "Dashboard", active: true },
-            { icon: Utensils, label: "Menu Management" },
-            { icon: Users, label: "Subscribers" },
-            { icon: QrCode, label: "Scan QR" },
-            { icon: Wallet, label: "Earnings" },
-          ].map((item) => (
-            <button key={item.label} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${item.active ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
+          {navItems.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => handleNavClick(item.id)}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                activeTab === item.id
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+              }`}
+            >
               <item.icon className="w-5 h-5" />
               {item.label}
             </button>
@@ -64,80 +89,132 @@ export default function ProviderDashboard() {
         </nav>
       </aside>
 
+      {/* Overlay for mobile */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Main */}
       <main className="flex-1 lg:ml-0">
-        <header className="sticky top-0 bg-card/80 backdrop-blur-lg border-b border-border p-4 flex items-center gap-4">
+        <header className="sticky top-0 bg-card/80 backdrop-blur-lg border-b border-border p-4 flex items-center gap-4 z-30">
           <button onClick={() => setSidebarOpen(true)} className="lg:hidden">
             <Menu className="w-6 h-6" />
           </button>
           <div>
-            <h1 className="text-xl font-bold text-foreground">Dashboard</h1>
+            <h1 className="text-xl font-bold text-foreground">{getPageTitle()}</h1>
             <p className="text-sm text-muted-foreground">Welcome back, Sharma's Kitchen</p>
           </div>
         </header>
 
-        <div className="p-4 md:p-6 space-y-6">
-          {/* Stats */}
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {stats.map((stat, i) => (
-              <StatsCard key={i} {...stat} />
-            ))}
-          </div>
+        <div className="p-4 md:p-6">
+          {activeTab === "dashboard" && (
+            <div className="space-y-6">
+              {/* Stats */}
+              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {stats.map((stat, i) => (
+                  <StatsCard key={i} {...stat} />
+                ))}
+              </div>
 
-          {/* Recent Activity */}
-          <div className="grid lg:grid-cols-2 gap-6">
-            <Card variant="elevated">
-              <CardContent className="p-6">
-                <h2 className="font-bold text-foreground mb-4 flex items-center gap-2">
-                  <Clock className="w-5 h-5 text-primary" />
-                  Recent Scans
-                </h2>
-                <div className="space-y-3">
-                  {recentScans.map((scan, i) => (
-                    <div key={i} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary">
-                          {scan.name[0]}
+              {/* Recent Activity */}
+              <div className="grid lg:grid-cols-2 gap-6">
+                <Card variant="elevated">
+                  <CardContent className="p-6">
+                    <h2 className="font-bold text-foreground mb-4 flex items-center gap-2">
+                      <Clock className="w-5 h-5 text-primary" />
+                      Recent Scans
+                    </h2>
+                    <div className="space-y-3">
+                      {recentScans.map((scan, i) => (
+                        <div key={i} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary">
+                              {scan.name[0]}
+                            </div>
+                            <div>
+                              <p className="font-medium text-foreground">{scan.name}</p>
+                              <p className="text-xs text-muted-foreground">{scan.time}</p>
+                            </div>
+                          </div>
+                          <Badge variant="success">
+                            <CheckCircle className="w-3 h-3 mr-1" />
+                            Valid
+                          </Badge>
                         </div>
-                        <div>
-                          <p className="font-medium text-foreground">{scan.name}</p>
-                          <p className="text-xs text-muted-foreground">{scan.time}</p>
-                        </div>
-                      </div>
-                      <Badge variant="success">
-                        <CheckCircle className="w-3 h-3 mr-1" />
-                        Valid
-                      </Badge>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                  </CardContent>
+                </Card>
 
+                <Card variant="elevated">
+                  <CardContent className="p-6">
+                    <h2 className="font-bold text-foreground mb-4">Quick Actions</h2>
+                    <div className="grid grid-cols-2 gap-3">
+                      <Button
+                        variant="soft"
+                        className="h-auto py-4 flex-col gap-2"
+                        onClick={() => setActiveTab("scanner")}
+                      >
+                        <QrCode className="w-6 h-6" />
+                        <span>Scan QR</span>
+                      </Button>
+                      <Button
+                        variant="soft"
+                        className="h-auto py-4 flex-col gap-2"
+                        onClick={() => setActiveTab("menu")}
+                      >
+                        <Utensils className="w-6 h-6" />
+                        <span>Update Menu</span>
+                      </Button>
+                      <Button
+                        variant="soft"
+                        className="h-auto py-4 flex-col gap-2"
+                        onClick={() => setActiveTab("subscribers")}
+                      >
+                        <Users className="w-6 h-6" />
+                        <span>View Subscribers</span>
+                      </Button>
+                      <Button
+                        variant="soft"
+                        className="h-auto py-4 flex-col gap-2"
+                        onClick={() => setActiveTab("earnings")}
+                      >
+                        <Wallet className="w-6 h-6" />
+                        <span>Earnings</span>
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          )}
+
+          {activeTab === "menu" && <MenuManagement />}
+          
+          {activeTab === "scanner" && <QRScanner />}
+
+          {activeTab === "subscribers" && (
             <Card variant="elevated">
-              <CardContent className="p-6">
-                <h2 className="font-bold text-foreground mb-4">Quick Actions</h2>
-                <div className="grid grid-cols-2 gap-3">
-                  <Button variant="soft" className="h-auto py-4 flex-col gap-2">
-                    <QrCode className="w-6 h-6" />
-                    <span>Scan QR</span>
-                  </Button>
-                  <Button variant="soft" className="h-auto py-4 flex-col gap-2">
-                    <Utensils className="w-6 h-6" />
-                    <span>Update Menu</span>
-                  </Button>
-                  <Button variant="soft" className="h-auto py-4 flex-col gap-2">
-                    <Users className="w-6 h-6" />
-                    <span>View Subscribers</span>
-                  </Button>
-                  <Button variant="soft" className="h-auto py-4 flex-col gap-2">
-                    <Wallet className="w-6 h-6" />
-                    <span>Earnings</span>
-                  </Button>
-                </div>
+              <CardContent className="p-6 text-center py-12">
+                <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="font-bold text-foreground mb-2">Subscribers</h3>
+                <p className="text-muted-foreground">Subscriber management coming soon</p>
               </CardContent>
             </Card>
-          </div>
+          )}
+
+          {activeTab === "earnings" && (
+            <Card variant="elevated">
+              <CardContent className="p-6 text-center py-12">
+                <Wallet className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="font-bold text-foreground mb-2">Earnings</h3>
+                <p className="text-muted-foreground">Earnings dashboard coming soon</p>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </main>
     </div>
