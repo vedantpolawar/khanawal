@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { StatsCard } from "@/components/common/StatsCard";
 import MenuManagement from "./provider/MenuManagement";
 import QRScanner from "./provider/QRScanner";
+import EarningsDashboard from "./provider/EarningsDashboard";
+import SubscriberManagement from "./provider/SubscriberManagement";
 import {
   LayoutDashboard,
   Utensils,
@@ -196,25 +198,9 @@ export default function ProviderDashboard() {
           
           {activeTab === "scanner" && <QRScanner />}
 
-          {activeTab === "subscribers" && (
-            <Card variant="elevated">
-              <CardContent className="p-6 text-center py-12">
-                <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="font-bold text-foreground mb-2">Subscribers</h3>
-                <p className="text-muted-foreground">Subscriber management coming soon</p>
-              </CardContent>
-            </Card>
-          )}
+          {activeTab === "subscribers" && <SubscriberManagement />}
 
-          {activeTab === "earnings" && (
-            <Card variant="elevated">
-              <CardContent className="p-6 text-center py-12">
-                <Wallet className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="font-bold text-foreground mb-2">Earnings</h3>
-                <p className="text-muted-foreground">Earnings dashboard coming soon</p>
-              </CardContent>
-            </Card>
-          )}
+          {activeTab === "earnings" && <EarningsDashboard />}
         </div>
       </main>
     </div>
