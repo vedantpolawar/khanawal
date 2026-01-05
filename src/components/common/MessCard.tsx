@@ -42,10 +42,10 @@ export function MessCard({
       </div>
       <CardContent className="p-4">
         <div className="flex items-center gap-2 mb-2">
+          <h3 className="font-bold text-lg text-foreground">{name}</h3>
           <Badge variant={isVeg ? "veg" : "non-veg"}>
             {isVeg ? "Pure Veg" : "Non-Veg"}
           </Badge>
-          <h3 className="font-bold text-lg text-foreground">{name}</h3>
         </div>
         <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
           <span className="flex items-center gap-1">
