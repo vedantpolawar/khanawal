@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -10,6 +11,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import {
   Search,
   Filter,
@@ -23,6 +31,7 @@ import {
   Clock,
   Download,
   UserPlus,
+  X,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -30,6 +39,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useToast } from "@/hooks/use-toast";
 
 type SubscriberStatus = "all" | "active" | "expiring" | "expired";
 type PlanType = "all" | "monthly" | "quarterly";
@@ -185,8 +195,17 @@ export default function SubscriberManagement() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<SubscriberStatus>("all");
   const [planFilter, setPlanFilter] = useState<PlanType>("all");
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [subscribers, setSubscribers] = useState<Subscriber[]>(mockSubscribers);
+  const [newSubscriber, setNewSubscriber] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    plan: "monthly" as "monthly" | "quarterly",
+  });
+  const { toast } = useToast();
 
-  const filteredSubscribers = mockSubscribers.filter((subscriber) => {
+  const filteredSubscribers = subscribers.filter((subscriber) => {
     const matchesSearch =
       subscriber.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       subscriber.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -199,10 +218,60 @@ export default function SubscriberManagement() {
   });
 
   const stats = {
-    total: mockSubscribers.length,
-    active: mockSubscribers.filter((s) => s.status === "active").length,
-    expiring: mockSubscribers.filter((s) => s.status === "expiring").length,
-    expired: mockSubscribers.filter((s) => s.status === "expired").length,
+    total: subscribers.length,
+    active: subscribers.filter((s) => s.status === "active").length,
+    expiring: subscribers.filter((s) => s.status === "expiring").length,
+    expired: subscribers.filter((s) => s.status === "expired").length,
+  };
+
+  const handleAddSubscriber = () => {
+    if (!newSubscriber.name.trim() || !newSubscriber.email.trim() || !newSubscriber.phone.trim()) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in all required fields.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const today = new Date();
+    const endDate = new Date(today);
+    if (newSubscriber.plan === "monthly") {
+      endDate.setMonth(endDate.getMonth() + 1);
+    } else {
+      endDate.setMonth(endDate.getMonth() + 3);
+    }
+
+    const totalMeals = newSubscriber.plan === "monthly" ? 30 : 90;
+    const initials = newSubscriber.name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+
+    const subscriber: Subscriber = {
+      id: Date.now(),
+      name: newSubscriber.name.trim(),
+      email: newSubscriber.email.trim(),
+      phone: newSubscriber.phone.trim(),
+      plan: newSubscriber.plan,
+      status: "active",
+      startDate: today.toISOString().split("T")[0],
+      endDate: endDate.toISOString().split("T")[0],
+      mealsLeft: totalMeals,
+      totalMeals,
+      avatar: initials,
+    };
+
+    setSubscribers([subscriber, ...subscribers]);
+    setNewSubscriber({ name: "", email: "", phone: "", plan: "monthly" });
+    setIsAddModalOpen(false);
+
+    toast({
+      title: "Subscriber Added",
+      description: `${subscriber.name} has been added successfully.`,
+    });
   };
 
   return (
@@ -307,7 +376,7 @@ export default function SubscriberManagement() {
               <Button variant="soft" size="icon">
                 <Download className="w-4 h-4" />
               </Button>
-              <Button className="gap-2">
+              <Button className="gap-2" onClick={() => setIsAddModalOpen(true)}>
                 <UserPlus className="w-4 h-4" />
                 <span className="hidden sm:inline">Add</span>
               </Button>
@@ -412,6 +481,84 @@ export default function SubscriberManagement() {
           ))
         )}
       </div>
+
+      {/* Add Subscriber Modal */}
+      <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserPlus className="w-5 h-5 text-primary" />
+              Add New Subscriber
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Full Name *</Label>
+              <Input
+                id="name"
+                placeholder="Enter subscriber name"
+                value={newSubscriber.name}
+                onChange={(e) =>
+                  setNewSubscriber({ ...newSubscriber, name: e.target.value })
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email Address *</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="Enter email address"
+                value={newSubscriber.email}
+                onChange={(e) =>
+                  setNewSubscriber({ ...newSubscriber, email: e.target.value })
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone Number *</Label>
+              <Input
+                id="phone"
+                type="tel"
+                placeholder="+91 98765 43210"
+                value={newSubscriber.phone}
+                onChange={(e) =>
+                  setNewSubscriber({ ...newSubscriber, phone: e.target.value })
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="plan">Subscription Plan *</Label>
+              <Select
+                value={newSubscriber.plan}
+                onValueChange={(v) =>
+                  setNewSubscriber({
+                    ...newSubscriber,
+                    plan: v as "monthly" | "quarterly",
+                  })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select plan" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="monthly">Monthly (30 meals)</SelectItem>
+                  <SelectItem value="quarterly">Quarterly (90 meals)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setIsAddModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleAddSubscriber}>
+              <UserPlus className="w-4 h-4 mr-2" />
+              Add Subscriber
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
